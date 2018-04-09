@@ -1,4 +1,4 @@
-pragma	solidity	^0.4.3;	
+pragma	solidity	^0.4.19;	
 
 contract	Lottery	{	
     
@@ -20,18 +20,20 @@ contract	Lottery	{
 	
 	// lottery mapping that map lotteryno to another mapping that maps ticket hash given at purchase stage to ticket value
     mapping ( uint => mapping(bytes32 => uint) ) boughttickets;
-    
+
+    	// holds winners' addresses
+	mapping (address => uint) winners;    
     
     // revealed ticket list
-	Ticket[] revealedtickets;
+	Ticket[100] revealedtickets;
 	
-	// holds winners' addresses
-	mapping (address => uint) winners;
+
 	
+	// total number of revealed tickets for the lottery to be revealed next
 	uint totalrevealed;
 	
 	// total participants in lotteries
-	uint[]   totalparticipants;
+	uint[100]   totalparticipants;
 
 	// constant ticket prices
 	uint	constant	fullpay	= 8 finney;
@@ -44,7 +46,7 @@ contract	Lottery	{
 	uint	public	revealend;
 	
 	// current balances of lotteries
-	uint[]  lotterybalance;
+	uint[100]  lotterybalance;
 
 	
 	function()	{	
@@ -53,16 +55,16 @@ contract	Lottery	{
 		
 	//	constructor		
 	function	Lottery()	{	
-	    lotteryno = 1;
+	    lotteryno = 0;
 	    
-		start	=	block.timestamp;	
-		buyend =	start + 10  minutes * 20000;
-		revealend = buyend + 10 minutes * 20000;
+		start	=	block.number;
+		buyend =	start +  20000;
+		revealend = buyend + 20000;
 	}
 	
 	//buy full ticket
 	function buyfullticket(bytes32 tickethash) public payable {
-	    if(block.timestamp < buyend){
+	    if(block.number < buyend){
 	         if(msg.value == fullpay){
 	             boughttickets[lotteryno][tickethash] = 8 finney;
 	             totalparticipants[lotteryno]++;
@@ -78,7 +80,7 @@ contract	Lottery	{
 	
 	//buy half ticket
 	function buyhalfticket(bytes32 tickethash) public payable {
-	    if(block.timestamp < buyend){
+	    if(block.number < buyend){
 	         if(msg.value == halfpay){
 	             boughttickets[lotteryno][tickethash] = 4 finney;
 	             totalparticipants[lotteryno]++;
@@ -94,7 +96,7 @@ contract	Lottery	{
 	
 	//buy quarter ticket
 	function buyquarterticket(bytes32 tickethash) public payable {
-	    if(block.timestamp < buyend){
+	    if(block.number < buyend){
 	         if(msg.value == quarterpay){
 	             boughttickets[lotteryno][tickethash] = 2 finney;
 	             totalparticipants[lotteryno]++;
@@ -112,7 +114,7 @@ contract	Lottery	{
 
    //reveal ticket
    function revealticket(uint number1, uint number2, uint number3) public {
-        if( (block.timestamp - 10 minutes * 20000) < revealend){
+        if( (block.number - 20000) < revealend){
 	         bytes32 hash = keccak256(number1,number2,number3,msg.sender);
 	         uint currentlotteryno;
              if(nextstarted){
@@ -170,7 +172,7 @@ contract	Lottery	{
    function startnewlottery() private {
         
        start = buyend;
-       buyend += 10 minutes * 20000;
+       buyend += 20000;
        
        nextstarted = true;
        lotteryno++;
@@ -220,7 +222,7 @@ contract	Lottery	{
        delete totalrevealed;
        
        //update revealend time
-       revealend += 10 minutes * 20000;
+       revealend += 20000;
        
        // reset nexstarted
        nextstarted = false;
@@ -233,7 +235,7 @@ contract	Lottery	{
        return keccak256(i,j,k,msg.sender);
    }
    
-   function setstart1(uint val) public {
+   function setstart(uint val) public {
        start = val;
    }
    
