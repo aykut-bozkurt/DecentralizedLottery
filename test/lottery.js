@@ -3,7 +3,7 @@ var Lottery = artifacts.require("./Lottery.sol");
 
 contract('Lottery', function(accounts){
 
-	it("exactly 8 finney should be send to buy a full ticket", function(){
+	it("full ticket purchase", function(){
 		var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
 		var number1 = "1";
 		var number2 = "2";
@@ -32,7 +32,7 @@ contract('Lottery', function(accounts){
 
 contract('Lottery', function(accounts){
 
-    it("a value not equal to 8 finney should revert the full ticket purchase", function(){
+    it("full ticket revert", function(){
         var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
         var number1 = 1;
         var number2 = 2;
@@ -56,7 +56,7 @@ contract('Lottery', function(accounts){
 
 contract('Lottery', function(accounts){
 
-    it("exactly 4 finney should be send to buy a half ticket", function(){
+    it("half ticket purchase", function(){
         var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
         var number1 = 1;
         var number2 = 2;
@@ -84,7 +84,7 @@ contract('Lottery', function(accounts){
 
 contract('Lottery', function(accounts){
 
-    it("a value not equal to 4 finney should revert the half ticket purchase", function(){
+    it("half ticket revert", function(){
         var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
         var number1 = 1;
         var number2 = 2;
@@ -108,7 +108,7 @@ contract('Lottery', function(accounts){
 
 contract('Lottery', function(accounts){
 
-    it("exactly 2 finney should be send to buy a quarter ticket", function(){
+    it("half ticket purchase", function(){
         var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
         var number1 = 1;
         var number2 = 2;
@@ -136,7 +136,7 @@ contract('Lottery', function(accounts){
 
 contract('Lottery', function(accounts){
 
-    it("a value not equal to 2 finney should revert the half ticket purchase", function(){
+    it("quarter ticket revert", function(){
         var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
         var number1 = 1;
         var number2 = 2;
@@ -151,6 +151,27 @@ contract('Lottery', function(accounts){
             else{
                 assert(false,true,"it should revert quarter ticket purchase when a sender sends not equal to 2 finney.");
             }
+        })
+
+    });
+
+});
+
+
+
+contract("Lottery", function(accounts){
+
+    it("reveal ticket", function(){
+        var number1 = 1;
+        var number2 = 2;
+        var number3 = 3;
+
+        return Lottery.deployed().then(function (contract) {
+            return contract.revealticket(number1,number2,number3,{from:accounts[0]});
+        }).then(function(result){
+            console.log(result);
+        }).catch(function(error){
+            console.log(error)
         })
 
     });
