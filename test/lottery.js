@@ -91,7 +91,7 @@ contract('Lottery', function(accounts){
         var number3 = 3;
 
         return Lottery.deployed().then(function(contract){
-            return contract.buyfullticket(ticketHash,{from:accounts[0],value:web3.toWei(3,"finney")});
+            return contract.buyhalfticket(ticketHash,{from:accounts[0],value:web3.toWei(3,"finney")});
         }).catch(function(error){
             if(error.toString().indexOf("revert") != -1){
                 console.log("Passed full ticket purchase revert test");
@@ -143,7 +143,7 @@ contract('Lottery', function(accounts){
         var number3 = 3;
 
         return Lottery.deployed().then(function(contract){
-            return contract.buyfullticket(ticketHash,{from:accounts[0],value:web3.toWei(1,"finney")});
+            return contract.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(1,"finney")});
         }).catch(function(error){
             if(error.toString().indexOf("revert") != -1){
                 console.log("Passed full ticket purchase revert test");
@@ -161,17 +161,40 @@ contract('Lottery', function(accounts){
 
 contract("Lottery", function(accounts){
 
-    it("reveal ticket", function(){
+    it("reveal ticket after buying it", function(){
         var number1 = 1;
         var number2 = 2;
         var number3 = 3;
+        var currentLotteryNo;
+        var revealEnd;
+        var instance;
+        var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
 
         return Lottery.deployed().then(function (contract) {
-            return contract.revealticket(number1,number2,number3,{from:accounts[0]});
+            instance = contract;
+            return contract.lotteryno.call();
+        }).then(function (lotteryNumber) {
+            currentLotteryNo = lotteryNumber;
+            return instance.revealend.call();
+        }).then(function (result) {
+            revealEnd = result;
+            return instance.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(2,"finney")});
+        }).then(function () {
+            return instance.revealticket(number1,number2,number3,{from:accounts[0]});
         }).then(function(result){
-            console.log(result);
+            if(currentLotteryNo == 0){
+                assert(false,true,"it should revert reveal when lottery no is 0");
+            }else if(currentLotteryNo != 0 && web3.eth.getBlockNumber() < revealEnd){
+                assert(result,true,"it should reveal the ticket if lottery no is not 0 and reveal is continuing");
+            }else if(currentLotteryNo != 0 && web3.eth.getBlockNumber() < revealEnd){
+                assert(result,false,"it should update the lottery and not reveal the ticket");
+            }
         }).catch(function(error){
-            console.log(error)
+            if(currentLotteryNo == 0){
+                assert(true,true,"it should revert reveal when lottery no is 0");
+            }else{
+                assert(true,false,"it should reveal the ticket when given ticket hash is proper.");
+            }
         })
 
     });

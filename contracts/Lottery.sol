@@ -1,45 +1,50 @@
 pragma	solidity	^0.4.19;	
 
-contract Lottery {	
+contract	Lottery	{	
     
     struct Ticket{
         address owner;
-        uint value;
+        uint256 value;
+        bytes32 hashVal;
+        bool revealed;
     }
     
     // current lottery number
-    uint    public  lotteryno;
+    uint256    public  lotteryno;
     
     
     // winner numbers that are updated by xoring the numbers given by the buyer at reveal stage
-	uint    public  winnernumber1;
-	uint    public  winnernumber2;
-	uint    public  winnernumber3;
+	uint256    public  winnernumber1;
+	uint256    public  winnernumber2;
+	uint256    public  winnernumber3;
 	
 	// lottery mapping that map lotteryno to another mapping that maps ticket hash given at purchase stage to ticket value
-    mapping ( uint => mapping(bytes32 => uint) ) boughttickets;
+    //mapping ( uint256 => mapping(bytes32 => uint256) ) boughttickets;
+    
+    // lottery mapping that map lotteryno to another mapping that maps ticket hash given at purchase stage to ticket value
+    mapping ( uint256 => mapping(address => Ticket[]) ) boughttickets;
 
     	// holds winners' addresses
-	mapping (address => uint) winners;    
+	mapping (address => uint256) winners;
     
     // revealed ticket list
 	Ticket[] revealedtickets;
 	
 	// total number of revealed tickets for the lottery to be revealed next
-	uint totalrevealed;
+	uint256 totalrevealed;
 	
 	// constant ticket prices
-	uint	constant	fullpay = 8 finney;
-	uint	constant	halfpay = 4 finney;
-	uint	constant	quarterpay = 2 finney;
+	uint256	constant	fullpay = 8 finney;
+	uint256	constant	halfpay = 4 finney;
+	uint256	constant	quarterpay = 2 finney;
 	
 	// purchase start, purchase end, reveal end times of lottery
-	uint	public	start; 
-	uint    public  buyend;
-	uint	public	revealend;
+	uint256	public	start;
+	uint256    public  buyend;
+	uint256	public	revealend;
 	
 	// current balances of lotteries
-	uint[]  lotterybalance;
+	uint256[]  lotterybalance;
 
 	
 	function() public	{	
@@ -60,7 +65,11 @@ contract Lottery {
 	function buyfullticket(bytes32 tickethash) public payable {
 	    if(block.number < buyend){
 	         if(msg.value == fullpay){
-	             boughttickets[lotteryno][tickethash] = 8 finney;
+	             Ticket memory t;
+	             t.owner = msg.sender;
+	             t.value = 8 finney;
+	             t.hashVal = tickethash;
+	             boughttickets[lotteryno][msg.sender].push(t);
 	             lotterybalance[lotteryno] += 8 finney;
 	         }else{
 	             revert();
@@ -81,7 +90,11 @@ contract Lottery {
 	function buyhalfticket(bytes32 tickethash) public payable {
 	    if(block.number < buyend){
 	         if(msg.value == halfpay){
-	             boughttickets[lotteryno][tickethash] = 4 finney;
+	             Ticket memory t;
+	             t.owner = msg.sender;
+	             t.value = 4 finney;
+	             t.hashVal = tickethash;
+	             boughttickets[lotteryno][msg.sender].push(t);
 	             lotterybalance[lotteryno] += 4 finney;
 	         }else{
 	             revert();
@@ -102,7 +115,11 @@ contract Lottery {
 	function buyquarterticket(bytes32 tickethash) public payable {
 	    if(block.number < buyend){
 	         if(msg.value == quarterpay){
-	             boughttickets[lotteryno][tickethash] = 2 finney;
+	             Ticket memory t;
+	             t.owner = msg.sender;
+	             t.value = 2 finney;
+	             t.hashVal = tickethash;
+	             boughttickets[lotteryno][msg.sender].push(t);
 	             lotterybalance[lotteryno] += 2 finney;
 	         }else{
 	             revert();
@@ -123,38 +140,38 @@ contract Lottery {
 
 
    //reveal ticket
-   function revealticket(uint number1, uint number2, uint number3) public {
+   function revealticket(uint number1, uint number2, uint number3) public returns(bool) {
         if( (lotteryno != 0 && block.number < revealend) ){
 	         bytes32 hash = keccak256(number1,number2,number3,msg.sender);
-	         
-	         if(boughttickets[lotteryno-1][hash] != 0){
-	             Ticket t;
-	             if(boughttickets[lotteryno-1][hash] == 2 finney){
-	                 t.owner = msg.sender;
-	                 t.value = 2 finney;
-	                 winnernumber3 ^= number3;
-	             }else if(boughttickets[lotteryno-1][hash] == 4 finney){
-	                 t.owner = msg.sender;
-	                 t.value = 4 finney;
-	                 winnernumber2 ^= number2;
-	             }else{
-	                 t.owner = msg.sender;
-	                 t.value = 8 finney;
-	                 winnernumber1 ^= number1;
+	         uint totalticketsnotyetrevealed = boughttickets[lotteryno-1][msg.sender].length;
+	         if(totalticketsnotyetrevealed != 0){
+                       
+	             bool flag = false;
+	             for(uint i=0;i<totalticketsnotyetrevealed;i++){
+	                 if(boughttickets[lotteryno-1][msg.sender][i].hashVal == hash && boughttickets[lotteryno-1][msg.sender][i].revealed == false){
+	                    revealedtickets.push(boughttickets[lotteryno-1][msg.sender][totalticketsnotyetrevealed-1]);
+	                    totalrevealed++;      
+	                    // to prevent double reveal of a ticket
+	                    boughttickets[lotteryno-1][msg.sender][i].revealed = true;
+	                    flag = true;
+			    winnernumber3 ^= number3;
+                 	    winnernumber2 ^= number2;
+	             	    winnernumber1 ^= number1;
+	                    break;
+	                 }
 	             }
-	             
-	             revealedtickets.push(t);
-	             totalrevealed++;
-	             
-	             // make zero its hash to prevent duplicate reveal of a ticket
-	             boughttickets[lotteryno-1][hash] = 0;
-	             
+	             if(flag){
+	                 return true;
+	             }else{
+	                 revert();
+	             }
 	         }else{
 	             revert();
 	         }
 	    }else{
 	        if(lotteryno != 0){
 	            updatelottery();
+	            return false;
 	        }else{
 	            revert();
 	        }
@@ -267,6 +284,10 @@ contract Lottery {
    
    function setrevealend(uint val) public{
        revealend = val;
+   }
+   
+   function setlottery(uint val) public {
+       lotteryno = val;
    }
    
 					
