@@ -40,19 +40,25 @@ contract('Lottery', function(accounts){
 
         return Lottery.deployed().then(function(contract){
             return contract.buyfullticket(ticketHash,{from:accounts[0],value:web3.toWei(7,"finney")});
-        }).catch(function(error){
-            if(error.toString().indexOf("revert") != -1){
-                console.log("Passed full ticket purchase revert test");
-            }
-            else{
-                assert(false,true,"it should revert full ticket purchase when a sender sends not equal to 8 finney.");
-            }
+        }).then(function (result) {
+            assert(false,true,"it should revert full ticket purchase when a sender sends not equal to 8 finney.");
+        }, function (error) {
+            console.log("Passed full ticket purchase revert test");
         })
 
     });
 
 });
 
+
+/*.catch(function(error){
+    if(error.toString().indexOf("revert") != -1){
+        console.log("Passed full ticket purchase revert test");
+    }
+    else{
+        assert(false,true,"it should revert full ticket purchase when a sender sends not equal to 8 finney.");
+    }
+})*/
 
 contract('Lottery', function(accounts){
 
@@ -92,19 +98,24 @@ contract('Lottery', function(accounts){
 
         return Lottery.deployed().then(function(contract){
             return contract.buyhalfticket(ticketHash,{from:accounts[0],value:web3.toWei(3,"finney")});
-        }).catch(function(error){
-            if(error.toString().indexOf("revert") != -1){
-                console.log("Passed full ticket purchase revert test");
-            }
-            else{
-                assert(false,true,"it should revert half ticket purchase when a sender sends not equal to 4 finney.");
-            }
+        }).then(function (result) {
+            assert(false,true,"it should revert half ticket purchase when a sender sends not equal to 4 finney.");
+        }, function (error) {
+            console.log("Passed half ticket purchase revert test");
         })
 
     });
 
 });
 
+/*.catch(function(error){
+            if(error.toString().indexOf("revert") != -1){
+                console.log("Passed full ticket purchase revert test");
+            }
+            else{
+                assert(false,true,"it should revert half ticket purchase when a sender sends not equal to 4 finney.");
+            }
+        })*/
 
 contract('Lottery', function(accounts){
 
@@ -144,13 +155,10 @@ contract('Lottery', function(accounts){
 
         return Lottery.deployed().then(function(contract){
             return contract.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(1,"finney")});
-        }).catch(function(error){
-            if(error.toString().indexOf("revert") != -1){
-                console.log("Passed full ticket purchase revert test");
-            }
-            else{
-                assert(false,true,"it should revert quarter ticket purchase when a sender sends not equal to 2 finney.");
-            }
+        }).then(function (result) {
+            assert(false,true,"it should revert quarter ticket purchase when a sender sends not equal to 2 finney.");
+        }, function (error) {
+            console.log("Passed quarter ticket purchase revert test");
         })
 
     });
@@ -158,6 +166,14 @@ contract('Lottery', function(accounts){
 });
 
 
+/*.catch(function(error){
+            if(error.toString().indexOf("revert") != -1){
+                console.log("Passed full ticket purchase revert test");
+            }
+            else{
+                assert(false,true,"it should revert quarter ticket purchase when a sender sends not equal to 2 finney.");
+            }
+        })*/
 
 contract("Lottery", function(accounts){
 
