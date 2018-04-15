@@ -1,6 +1,68 @@
 var Lottery = artifacts.require("./Lottery.sol");
 
 
+/*rpc calls to advance last block timestamp and block number */
+
+// advances timestamp of the last block
+const increaseTime = function(addSeconds) {
+    web3.currentProvider.send({
+        jsonrpc: "2.0",
+        method: "evm_increaseTime",
+        params: [addSeconds],
+        id: 0
+    })
+}
+
+// mines one block
+const mineOneBlock = function() {
+    web3.currentProvider.send({
+        jsonrpc: "2.0",
+        method: "evm_mine",
+        params: [],
+        id: 0
+    })
+}
+
+// mines multiple blocks
+const mineBlocks = function (addBlocks) {
+    var i;
+    for(i = 0; i<addBlocks;i++){
+        mineOneBlock();
+    }
+}
+/*rpc calls to advance last block timestamp and block number*/
+
+// buy three tickets, advance blocks, then reveal tickets, advance blocks and try get ticket and then getprice
+
+contract('Lottery', function(accounts){
+
+    it("block mining simulation", function(){
+        var ticketHash = web3.sha3(number1,number2,number3,accounts[0]);
+        var number1 = "1";
+        var number2 = "2";
+        var number3 = "3";
+        var lotteryBalanceFirst;
+        var lotteryBalanceEnd;
+        var instance;
+
+        return Lottery.deployed().then(function(contract){
+            instance = contract;
+            return contract.getcontractbalance.call();
+        }).then(function(balance){
+            lotteryBalanceFirst = parseInt(balance);
+            return instance.buyfullticket(ticketHash,{from:accounts[0],value:web3.toWei(8,"finney")});
+        }).then(function () {
+            console.log(web3.eth.blockNumber);
+            mineBlocks(25);
+            console.log(web3.eth.blockNumber);
+        })
+
+
+    });
+});
+
+
+
 contract('Lottery', function(accounts){
 
 	it("full ticket purchase", function(){

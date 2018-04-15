@@ -10,41 +10,41 @@ contract	Lottery	{
     }
     
     // current lottery number
-    uint256    public  lotteryno;
+    uint    public  lotteryno;
     
     
     // winner numbers that are updated by xoring the numbers given by the buyer at reveal stage
-	uint256    public  winnernumber1;
-	uint256    public  winnernumber2;
-	uint256    public  winnernumber3;
+	uint    public  winnernumber1;
+	uint    public  winnernumber2;
+	uint    public  winnernumber3;
 	
 	// lottery mapping that map lotteryno to another mapping that maps ticket hash given at purchase stage to ticket value
-    //mapping ( uint256 => mapping(bytes32 => uint256) ) boughttickets;
+    //mapping ( uint => mapping(bytes32 => uint) ) boughttickets;
     
     // lottery mapping that map lotteryno to another mapping that maps ticket hash given at purchase stage to ticket value
-    mapping ( uint256 => mapping(address => Ticket[]) ) boughttickets;
+    mapping ( uint => mapping(address => Ticket[]) ) boughttickets;
 
     	// holds winners' addresses
-	mapping (address => uint256) winners;
+	mapping (address => uint) winners;    
     
     // revealed ticket list
 	Ticket[] revealedtickets;
 	
 	// total number of revealed tickets for the lottery to be revealed next
-	uint256 totalrevealed;
+	uint totalrevealed;
 	
 	// constant ticket prices
-	uint256	constant	fullpay = 8 finney;
-	uint256	constant	halfpay = 4 finney;
-	uint256	constant	quarterpay = 2 finney;
+	uint	constant	fullpay = 8 finney;
+	uint	constant	halfpay = 4 finney;
+	uint	constant	quarterpay = 2 finney;
 	
 	// purchase start, purchase end, reveal end times of lottery
-	uint256	public	start;
-	uint256    public  buyend;
-	uint256	public	revealend;
+	uint	public	start; 
+	uint    public  buyend;
+	uint	public	revealend;
 	
 	// current balances of lotteries
-	uint256[]  lotterybalance;
+	uint[]  lotterybalance;
 
 	
 	function() public	{	
@@ -57,8 +57,8 @@ contract	Lottery	{
 	    lotterybalance.push(0);
 	    
 		start	=	block.number;
-		buyend =	start +  20000;
-		revealend = buyend + 20000;
+		buyend =	start +  10;
+		revealend = buyend + 10;
 	}
 	
 	//buy full ticket
@@ -79,7 +79,8 @@ contract	Lottery	{
 	            updatelottery();
 	        }else{
 	            start = buyend;
-	            buyend += 20000;
+	            buyend += 10;
+	            lotterybalance.push(0);
 	            lotteryno++;
 	        }
 	        buyfullticket(tickethash);
@@ -104,7 +105,7 @@ contract	Lottery	{
 	            updatelottery();
 	        }else{
 	            start = buyend;
-	            buyend += 20000;
+	            buyend += 10;
 	            lotteryno++;
 	        }
 	        buyhalfticket(tickethash);
@@ -129,7 +130,7 @@ contract	Lottery	{
 	            updatelottery();
 	        }else{
 	            start = buyend;
-	            buyend += 20000;
+	            buyend += 10;
 	            lotterybalance.push(0);
 	            lotteryno++;
 	        }
@@ -145,21 +146,22 @@ contract	Lottery	{
 	         bytes32 hash = keccak256(number1,number2,number3,msg.sender);
 	         uint totalticketsnotyetrevealed = boughttickets[lotteryno-1][msg.sender].length;
 	         if(totalticketsnotyetrevealed != 0){
-                       
+	                
 	             bool flag = false;
 	             for(uint i=0;i<totalticketsnotyetrevealed;i++){
 	                 if(boughttickets[lotteryno-1][msg.sender][i].hashVal == hash && boughttickets[lotteryno-1][msg.sender][i].revealed == false){
-	                    revealedtickets.push(boughttickets[lotteryno-1][msg.sender][totalticketsnotyetrevealed-1]);
+	                    revealedtickets.push(boughttickets[lotteryno-1][msg.sender][i]);
 	                    totalrevealed++;      
-	                    // to prevent double reveal of a ticket
+	                    // to prevent double reveal of the same ticket
 	                    boughttickets[lotteryno-1][msg.sender][i].revealed = true;
 	                    flag = true;
-			    winnernumber3 ^= number3;
-                 	    winnernumber2 ^= number2;
-	             	    winnernumber1 ^= number1;
+	                    winnernumber3 ^= number3;
+                        winnernumber2 ^= number2;
+	                    winnernumber1 ^= number1;
 	                    break;
 	                 }
 	             }
+	             // if flag is true, then user revealed a ticket, else he did not have any purchased ticket to reveal, so revert
 	             if(flag){
 	                 return true;
 	             }else{
@@ -169,6 +171,8 @@ contract	Lottery	{
 	             revert();
 	         }
 	    }else{
+	        /*if this is not the first lottery, then reveal end has reached and update lottery and return false because user missed reveal, 
+	            else do not let him reveal because reveal time has not came yet, so revert*/
 	        if(lotteryno != 0){
 	            updatelottery();
 	            return false;
@@ -181,22 +185,20 @@ contract	Lottery	{
   
   //get price if sender has balance greater than zero
   function getprice() public payable {
-        
-     if(winners[msg.sender] != 0){
-         if	(msg.sender.send(winners[msg.sender]))	{	
-			 winners[msg.sender] = 0;	
-		 }	
+     uint amount = winners[msg.sender];
+     if(amount != 0){
+         if	(!msg.sender.send(amount))	{	
+			 	revert();
+		 }else{
+		     winners[msg.sender] = 0;
+		 }
      }else{
          revert();
      }
 	  
   }
   
-  // get current balance of the contract
-   function getcontractbalance() constant public returns(uint retval) {
-       return address(this).balance;
-   }
-   
+
    // updates lottery times after finding winners of the lottery
    function updatelottery() private {
        //i assumed there were at least 3 participants in each lottery at the end
@@ -259,8 +261,8 @@ contract	Lottery	{
        
        //update times
        start = buyend;
-       buyend += 20000;
-       revealend += 20000;
+       buyend += 10;
+       revealend += 10;
        
        // push next lottery balance and update lottery number
        lotterybalance.push(0);
@@ -274,21 +276,14 @@ contract	Lottery	{
        return keccak256(i,j,k,msg.sender);
    }
    
-   function setstart(uint val) public {
-       start = val;
+   function getBlockNo() public view returns(uint){
+       return block.number;
    }
    
-   function setbuyend(uint val) public {
-       buyend = val;
+   function getcontractbalance() constant public returns(uint retval) {
+       return address(this).balance;
    }
    
-   function setrevealend(uint val) public{
-       revealend = val;
-   }
-   
-   function setlottery(uint val) public {
-       lotteryno = val;
-   }
    
 					
 }	
