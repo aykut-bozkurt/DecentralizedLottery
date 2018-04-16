@@ -12,6 +12,9 @@ contract	Lottery	{
 	uint	constant	fullpay = 8 finney;
 	uint	constant	halfpay = 4 finney;
 	uint	constant	quarterpay = 2 finney;
+
+    //constant blockperiod of a stage
+	uint	constant	blockperiod = 50;
     
     // winner numbers that are updated by xoring the numbers given by the buyer at reveal stage
 	uint    public  winnernumber1;
@@ -43,8 +46,8 @@ contract	Lottery	{
 	//	constructor		
 	function Lottery() public	{	
 		start	=	block.number;
-		buyend =	start +  10;
-		revealend = buyend + 10;
+		buyend =	start +  blockperiod;
+		revealend = buyend + blockperiod;
 	}
 	
 	//buy full ticket
@@ -148,12 +151,12 @@ contract	Lottery	{
 	                 // user revealed a ticket
 	                 return true;
 	             }else{
-	                 // user had no unrevealed ticket left
-	                 revert();
+	                 // wrong hash
+	                 return false;
 	             }
 	         }else{
 	             // user had no purchased ticket
-	             revert();
+	             return false;
 	         }
 	    }else if(currentblockno < buyend ){
 	        
@@ -247,8 +250,8 @@ contract	Lottery	{
        
        //update times
        start = block.number;
-       buyend = start +  10;
-       revealend = buyend + 10;
+       buyend = start +  blockperiod;
+       revealend = buyend + blockperiod;
        
        
    }
@@ -271,3 +274,4 @@ contract	Lottery	{
    
 					
 }	
+
