@@ -137,10 +137,11 @@ contract	Lottery	{
 	                    totalrevealed++;
 	                    
 	                    // delete revealed ticket from bought tickets to prevent double reveal try of the same ticket
-	                    delete boughttickets[msg.sender][i];
+	                    boughttickets[msg.sender][i] = boughttickets[msg.sender][totalticketsnotyetrevealed-1];
+	                    boughttickets[msg.sender].length--;
 	                          
 	                    winnernumber3 ^= number3;
-                        winnernumber2 ^= number2;
+                            winnernumber2 ^= number2;
 	                    winnernumber1 ^= number1;
 	                    found = true;
 	                    break;
