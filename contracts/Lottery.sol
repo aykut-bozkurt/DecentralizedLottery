@@ -7,56 +7,57 @@ contract	Lottery	{
         uint256 value;
         bytes32 hashVal;
     }
-    
-    // block period
-    uint	constant blockperiod = 50;	
 
+    // constant ticket prices
+    uint	constant	fullpay = 8 finney;
+    uint	constant	halfpay = 4 finney;
+    uint	constant	quarterpay = 2 finney;
+
+    // constant block period
+    uint	constant	blockperiod = 50;
+    
+    // flag to check if it is first purchase stage (1 if it is, else 0)
+    uint public firstpurchase;
+    
     // current lottery number
-    uint    public  lotteryno;
+    uint public lotteryno;
     
     
     // winner numbers that are updated by xoring the numbers given by the buyer at reveal stage
-	uint    public  winnernumber1;
-	uint    public  winnernumber2;
-	uint    public  winnernumber3;
+	uint public winnernumber1;
+	uint public winnernumber2;
+	uint public winnernumber3;
 	
     
     // lottery mapping that map lotteryno to another mapping that maps ticket hash given at purchase stage to ticket value
     mapping ( uint => mapping(address => Ticket[]) ) boughttickets;
 
-    	// holds winners' addresses
-	mapping (address => uint) winners;    
+    // holds winners' addresses
+    mapping (address => uint) winners;    
     
     // revealed ticket list
-	Ticket[] revealedtickets;
+    Ticket[] revealedtickets;
 	
 	// total number of revealed tickets for the lottery to be revealed next
 	uint totalrevealed;
 	
-	// constant ticket prices
-	uint	constant	fullpay = 8 finney;
-	uint	constant	halfpay = 4 finney;
-	uint	constant	quarterpay = 2 finney;
-	
-	// purchase start, purchase end, reveal end times of lottery
-	uint	public	start; 
+	// purchase end, reveal end time block numbers of lottery
 	uint    public  buyend;
 	uint	public	revealend;
 	
+	// start time block number of the contract
+	uint    public  start;
+	
 	// current balances of lotteries
 	uint[]  lotterybalance;
-
-	
-	function() public	{	
-		revert();	
-	}	
 		
 	//	constructor		
-	function Lottery() public	{	
+	function Lottery() public	{
+	    firstpurchase = 1;
 	    lotteryno = 0;
 	    lotterybalance.push(0);
 	    
-		start	=	block.number;
+	    start = block.number;
 		buyend =	start +  blockperiod;
 		revealend = buyend + blockperiod;
 	}
@@ -75,14 +76,8 @@ contract	Lottery	{
 	             revert();
 	         }
 	    }else{
-	        if(lotteryno != 0){
-	            updatelottery();
-	        }else{
-	            start = buyend;
-	            buyend += blockperiod;
-	            lotterybalance.push(0);
-	            lotteryno++;
-	        }
+	        // update lottery and try buying ticket in the next lottery
+	        updatelottery();
 	        buyfullticket(tickethash);
 	    }
 	}
@@ -101,13 +96,8 @@ contract	Lottery	{
 	             revert();
 	         }
 	    }else{
-	        if(lotteryno != 0){
-	            updatelottery();
-	        }else{
-	            start = buyend;
-	            buyend += blockperiod;
-	            lotteryno++;
-	        }
+	        // update lottery and try buying ticket in the next lottery
+	        updatelottery();
 	        buyhalfticket(tickethash);
 	    }
 	}
@@ -126,14 +116,8 @@ contract	Lottery	{
 	             revert();
 	         }
 	    }else{
-	        if(lotteryno != 0){
-	            updatelottery();
-	        }else{
-	            start = buyend;
-	            buyend += blockperiod;
-	            lotterybalance.push(0);
-	            lotteryno++;
-	        }
+	        // update lottery and try buying ticket in the next lottery
+	        updatelottery();
 	        buyquarterticket(tickethash);
 	    }
 	}
@@ -142,51 +126,60 @@ contract	Lottery	{
 
    //reveal ticket
    function revealticket(uint number1, uint number2, uint number3) public returns(bool) {
-        if( (lotteryno != 0 && block.number < revealend) ){
-	         bytes32 hash = keccak256(number1,number2,number3,msg.sender);
-	         uint totalticketsnotyetrevealed = boughttickets[lotteryno-1][msg.sender].length;
-	         if(totalticketsnotyetrevealed != 0){
+        uint blockNo = block.number;
+        if( firstPurchaseEnded(blockNo) ){
+            if(blockNo < revealend){
+
+                 bytes32 hash = keccak256(number1,number2,number3,msg.sender);
+	             uint totalticketsnotyetrevealed = boughttickets[lotteryno-1+firstpurchase][msg.sender].length;
+	             if(totalticketsnotyetrevealed != 0){
 	                
-	             bool flag = false;
-	             for(uint i=0;i<totalticketsnotyetrevealed;i++){
-	                 if(boughttickets[lotteryno-1][msg.sender][i].hashVal == hash){
-	                    revealedtickets.push(boughttickets[lotteryno-1][msg.sender][i]);
-	                    totalrevealed++;      
-	                    // to prevent double reveal of the same ticket
-	                    boughttickets[lotteryno-1][msg.sender][i] = boughttickets[lotteryno-1][msg.sender][totalticketsnotyetrevealed-1];
-	                    boughttickets[lotteryno-1][msg.sender].length--;
+	                bool found = false;
+	                for(uint i=0;i<totalticketsnotyetrevealed;i++){
+	                    if(boughttickets[lotteryno-1+firstpurchase][msg.sender][i].hashVal == hash){
+	                       revealedtickets.push(boughttickets[lotteryno-1+firstpurchase][msg.sender][i]);
+	                       totalrevealed++;      
+	                       // to prevent double reveal of the same ticket
+	                       boughttickets[lotteryno-1+firstpurchase][msg.sender][i] = boughttickets[lotteryno-1+firstpurchase][msg.sender][totalticketsnotyetrevealed-1];
+	                       boughttickets[lotteryno-1+firstpurchase][msg.sender].length--;
 	                    
-	                    flag = true;
-	                    winnernumber3 ^= number3;
-                        winnernumber2 ^= number2;
-	                    winnernumber1 ^= number1;
-	                    break;
-	                 }
-	             }
+	                       found = true;
+	                       winnernumber3 ^= number3;
+                           winnernumber2 ^= number2;
+	                       winnernumber1 ^= number1;
+	                       break;
+	                    }
+	                }
 	             
-	             // if flag is true, then user revealed a ticket, else he did not have any purchased ticket to reveal, so revert
-	             if(flag){
-	                 return true;
-	             }else{
-	                 return false;
-	             }
-	         }else{
-	             return false;
-	         }
-	    }else{
-	        /*if this is not the first lottery, then reveal end has reached and update lottery and return false because user missed reveal, 
-	            else do not let him reveal because reveal time has not came yet, so revert*/
-	        if(lotteryno != 0){
+	                // if found is true, then user revealed a ticket(return true), else he did not have any purchased ticket to reveal(return false)
+	                if(found){
+	                    return true;
+	                }else{
+	                    return false;
+	                }
+	                
+	                
+	            }else{
+	                // user has no purchased ticket
+	                return false;
+	            }
+
+            }else{
+                // previous lottery reveal stage has ended, so update lottery and maybe user wanted to reveal a ticket of the current lottery
 	            updatelottery();
-	            return false;
-	        }else{
-	            revert();
-	        }
-	    }
+	            revealticket(number1,number2,number3);   
+            }
+            
+        }else{
+            // it is first lottery purchase time and reveal stage has not started yet, so revert
+	        revert();
+        }
+       
+	            
    }
    
   
-  //get price if sender has balance greater than zero
+  // get price if sender has balance greater than zero
   function getprice() public payable {
      uint amount = winners[msg.sender];
      if(amount != 0){
@@ -202,91 +195,115 @@ contract	Lottery	{
   }
   
 
-   // updates lottery times after finding winners of the lottery
-   function updatelottery() private {
-       //i assumed there were at least 3 participants in each lottery at the end
-       winnernumber1 = winnernumber1 % totalrevealed;        
-       winnernumber2 = winnernumber2 % totalrevealed;        
-       winnernumber3 = winnernumber3 % totalrevealed;        
-       
-       //make sure that winner indexes are different
-       if(winnernumber1 == winnernumber2){
+  // updates lottery times after finding winners of the lottery
+  function updatelottery() private {
+
+     //always update purchaseend time, but update revealend time only if the first lottery has already ended
+     buyend += blockperiod;
+
+     // push next lottery balance
+     lotterybalance.push(0);
+
+     uint blockNo = block.number;
+     if(firstLotteryEnded(blockNo)){
+
+        winnernumber1 = winnernumber1 % totalrevealed;
+        winnernumber2 = winnernumber2 % totalrevealed;
+        winnernumber3 = winnernumber3 % totalrevealed;
+
+        //make sure that winner indexes are different
+        if(winnernumber1 == winnernumber2){
            winnernumber2 = (winnernumber2 + 1) % totalrevealed;
-       }
-       if(winnernumber1 == winnernumber3){
+        }
+        if(winnernumber1 == winnernumber3){
            winnernumber3 =  (winnernumber3 + 2) % totalrevealed;
-       }
-       if(winnernumber2 == winnernumber3){
+        }
+        if(winnernumber2 == winnernumber3){
            winnernumber3 = (winnernumber3 + 1) % totalrevealed;
-       }
-       
-       uint prize1 = 0;
-       uint prize2 = 0;
-       uint prize3 = 0;
-       
-       if(revealedtickets[winnernumber1].value == 8 finney){
-           prize1 = lotterybalance[lotteryno-1]/2;
-       }else if(revealedtickets[winnernumber1].value == 4 finney){
-           prize1 = lotterybalance[lotteryno-1]/4;
-       }else{
-           prize1 = lotterybalance[lotteryno-1]/8;
-       }
-       
-       if(revealedtickets[winnernumber2].value == 8 finney){
-           prize2 = lotterybalance[lotteryno-1]/4;
-       }else if(revealedtickets[winnernumber2].value == 4 finney){
-           prize2 = lotterybalance[lotteryno-1]/8;
-       }else{
-           prize2 = lotterybalance[lotteryno-1]/16;
-       }
-       
-       if(revealedtickets[winnernumber3].value == 8 finney){
-           prize3 = lotterybalance[lotteryno-1]/8;
-       }else if(revealedtickets[winnernumber3].value == 4 finney){
-           prize3 = lotterybalance[lotteryno-1]/16;
-       }else{
-           prize3 = lotterybalance[lotteryno-1]/32;
-       }
-    
-       
-       // give the price first winner if there are many winners with the same number
-       winners[revealedtickets[winnernumber1].owner] += prize1;
-       winners[revealedtickets[winnernumber2].owner] += prize2;
-       winners[revealedtickets[winnernumber3].owner] += prize3;
-       
-       // update balance of the next lottery
-       uint leftovermoney = lotterybalance[lotteryno-1] - prize3 - prize2 - prize1;
-       lotterybalance[lotteryno] += leftovermoney;
-       
-       // delete revealed tickets to go next lottery reveal safe
-       delete revealedtickets;
-       delete totalrevealed;
-       
-       //update times
-       start = buyend;
-       buyend += blockperiod;
-       revealend += blockperiod;
-       
-       // push next lottery balance and update lottery number
-       lotterybalance.push(0);
-       lotteryno++;
-   }
+        }
+
+        uint prize1 = 0;
+        uint prize2 = 0;
+        uint prize3 = 0;
+
+        if(revealedtickets[winnernumber1].value == 8 finney){
+            prize1 = lotterybalance[lotteryno-1+firstpurchase]/2;
+        }else if(revealedtickets[winnernumber1].value == 4 finney){
+            prize1 = lotterybalance[lotteryno-1+firstpurchase]/4;
+        }else{
+            prize1 = lotterybalance[lotteryno-1+firstpurchase]/8;
+        }
+
+        if(revealedtickets[winnernumber2].value == 8 finney){
+            prize2 = lotterybalance[lotteryno-1+firstpurchase]/4;
+        }else if(revealedtickets[winnernumber2].value == 4 finney){
+            prize2 = lotterybalance[lotteryno-1+firstpurchase]/8;
+        }else{
+            prize2 = lotterybalance[lotteryno-1+firstpurchase]/16;
+        }
+
+        if(revealedtickets[winnernumber3].value == 8 finney){
+            prize3 = lotterybalance[lotteryno-1+firstpurchase]/8;
+        }else if(revealedtickets[winnernumber3].value == 4 finney){
+            prize3 = lotterybalance[lotteryno-1+firstpurchase]/16;
+        }else{
+            prize3 = lotterybalance[lotteryno-1+firstpurchase]/32;
+        }
+
+
+        // give the price first winner if there are many winners with the same number
+        winners[revealedtickets[winnernumber1].owner] += prize1;
+        winners[revealedtickets[winnernumber2].owner] += prize2;
+        winners[revealedtickets[winnernumber3].owner] += prize3;
+
+        // update balance of the next lottery
+        uint leftovermoney = lotterybalance[lotteryno-1+firstpurchase] - prize3 - prize2 - prize1;
+        lotterybalance[lotteryno+firstpurchase] += leftovermoney;
+
+        // delete revealed tickets to go next lottery reveal safe
+        delete revealedtickets;
+        delete totalrevealed;
+
+        revealend += blockperiod;
+
+
+     }
+
+
+     // set firstpurchase 0 after first purchase ends
+     if(firstpurchase == 1){
+        firstpurchase = 0;
+      }
+
+
+     // update lottery number
+     lotteryno++;
+
+  }
+   
+  // returns true if first purchase stage has already ended; otherwise, returns false
+  function firstPurchaseEnded(uint blockNo) private view returns(bool){
+      return blockNo >= start + blockperiod;
+  }
+   
+  // returns true if first lottery has already ended; otherwise, returns false
+  function firstLotteryEnded(uint blockNo) private view returns(bool){
+      return blockNo >= start + 2*blockperiod;
+  }
    
    
+  /*below methods are helpers when debug*/
+  function gethash(uint i,uint j,uint k) public view returns(bytes32 retval){
+      return keccak256(i,j,k,msg.sender);
+  }
    
-   /*below methods are helpers when debug*/
-   function gethash(uint i,uint j,uint k) public view returns(bytes32 retval){
-       return keccak256(i,j,k,msg.sender);
-   }
+  function getBlockNo() public view returns(uint){
+      return block.number;
+  }
    
-   function getBlockNo() public view returns(uint){
-       return block.number;
-   }
+  function getcontractbalance() constant public returns(uint retval) {
+      return address(this).balance;
+  }
    
-   function getcontractbalance() constant public returns(uint retval) {
-       return address(this).balance;
-   }
-   
-   
-					
+
 }	
