@@ -15,7 +15,7 @@ const increaseTime = function(addSeconds) {
 
 // mines one block
 const mineOneBlock = function() {
-    web3.currentProvider.send({
+     web3.currentProvider.send({
         jsonrpc: "2.0",
         method: "evm_mine",
         params: [],
@@ -189,7 +189,7 @@ contract('Lottery', function(accounts){
 
 contract("Lottery", function(accounts){
 
-    it("reveal ticket revert at purchase stage after buying it", function(){
+    it("reveal ticket revert at purchase stage after buying it in the first lottery", function(){
         var number1 = 1;
         var number2 = 2;
         var number3 = 3;
@@ -207,12 +207,9 @@ contract("Lottery", function(accounts){
         }).then(function () {
             return instance.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(2,"finney")});
         }).then(function () {
-            console.log(web3.eth.blockNumber);
-            mineBlocks(52-web3.eth.blockNumber);
-            console.log(web3.eth.blockNumber);
             return instance.revealticket.call(number1,number2,number3,{from:accounts[0]});
         }).catch(function (error) {
-            if(result.indexOf("revert") == -1){
+            if(error.toString().indexOf("revert") == -1){
                 assert.fail("it should revert reveal at purchase stage")
             }else{
                 console.log("passed")
@@ -248,6 +245,9 @@ contract('Lottery', function(accounts){
             console.log(web3.eth.blockNumber);
             mineBlocks(52-web3.eth.blockNumber);
             console.log(web3.eth.blockNumber);
+            //update lottery
+            return instance.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(2,"finney")});
+        }).then(function () {
             return instance.revealticket.call(number1,number2,number3,{from:accounts[0]});
         }).then(function (val) {
             console.log(val);
@@ -285,6 +285,9 @@ contract('Lottery', function(accounts){
             console.log(web3.eth.blockNumber);
             mineBlocks(52-web3.eth.blockNumber);
             console.log(web3.eth.blockNumber);
+            //update lottery
+            return instance.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(2,"finney")});
+        }).then(function () {
             return instance.revealticket.call(2,11,67,{from:accounts[0]});
         }).then(function (result) {
             console.log(result);
@@ -315,13 +318,16 @@ contract('Lottery', function(accounts){
             ticketHash = hash;
             return instance.buyfullticket(ticketHash,{from:accounts[0],value:web3.toWei(8,"finney")});
         }).then(function(){
-            return instance.buyhalfticket(ticketHash,{from:accounts[0],value:web3.toWei(4,"finney")});
+            return instance.buyfullticket(ticketHash,{from:accounts[0],value:web3.toWei(8,"finney")});
         }).then(function(){
-            return instance.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(2,"finney")});
+            return instance.buyfullticket(ticketHash,{from:accounts[0],value:web3.toWei(8,"finney")});
         }).then(function () {
             console.log(web3.eth.blockNumber);
             mineBlocks(52-web3.eth.blockNumber);
             console.log(web3.eth.blockNumber);
+            //update lottery
+            return instance.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(2,"finney")});
+        }).then(function () {
             return instance.revealticket(number1,number2,number3,{from:accounts[0]});
         }).then(function () {
             return instance.revealticket(number1,number2,number3,{from:accounts[0]});
@@ -338,7 +344,7 @@ contract('Lottery', function(accounts){
         }).then(function () {
             contractBalanceEnd = parseInt(web3.eth.getBalance(instance.address));
             assert.equal(contractBalanceFirst,parseInt(web3.toWei(0,"finney")),"at the start of the lottery contract balance should be 0");
-            assert.equal(contractBalanceEnd-contractBalanceFirst,parseInt(web3.toWei(7.875,"finney")),"at the end of the lottery contract balance should be less three prizes' total value.");
+            assert.equal(contractBalanceEnd-contractBalanceFirst,parseInt(web3.toWei(5,"finney")),"at the end of the lottery contract balance should be less three prizes' total value.");
         })
 
 
@@ -372,6 +378,9 @@ contract('Lottery', function(accounts){
             console.log(web3.eth.blockNumber);
             mineBlocks(52-web3.eth.blockNumber);
             console.log(web3.eth.blockNumber);
+            //update lottery
+            return instance.buyquarterticket(ticketHash,{from:accounts[0],value:web3.toWei(2,"finney")});
+        }).then(function () {
             return instance.revealticket(number1,number2,number3,{from:accounts[0]});
         }).then(function () {
             return instance.revealticket(number1,number2,number3,{from:accounts[0]});
