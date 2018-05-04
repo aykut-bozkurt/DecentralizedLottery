@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Decentralized Lottery</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script>
+
+        let web3 = window.web3 ;
+        if (typeof web3 !== 'undefined') {
+            // Use Mist/MetaMask's provider
+            web3js = new Web3(web3.currentProvider);
+        } else {
+            console.log('No web3? You should consider trying MetaMask!');
+            // fallback - use your fallback strategy (local node / hosted node + in-dapp idmgmt / fail)
+            web3js = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+        }
+
+        let abi = [
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "tickethash",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "buyfullticket",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "tickethash",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "buyhalfticket",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "tickethash",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "buyquarterticket",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "getprice",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "number1",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "number2",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "number3",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "revealticket",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "buyend",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "firstpurchase",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getBlockNo",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getcontractbalance",
+                "outputs": [
+                    {
+                        "name": "retval",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "i",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "j",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "k",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "gethash",
+                "outputs": [
+                    {
+                        "name": "retval",
+                        "type": "bytes32"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "lotteryno",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "revealend",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "start",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "winnernumber1",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "winnernumber2",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "winnernumber3",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+        let contractaddress = "0x5f2785a2f7e9bb177b30ab99102e71d90f55cd37" ;
+        let contract = web3js.eth.contract(abi).at(contractaddress);
+
+        if(!web3js.isConnected()) {
+            console.log("not connected");
+        }else{
+            console.log(" connected");
+        }
+
+        function callbuyfullticket(address,hash){
+            if(address.trim().length == 0) {
+                alert("Give account address!");
+            }else if(hash.trim().length == 0){
+                alert("Give hash!");
+            }else{
+                let tickettypes = document.getElementsByName("tickettype");
+                for(let i=0;i<tickettypes.length;i++){
+                    if(tickettypes[i].checked == true){
+                        if(tickettypes[i].value == "full"){
+                            return contract.buyfullticket(hash,{from:address,value:web3js.toWei(8,"finney")}, function (result) {
+                                console.log(result)
+                            });
+                        }
+                        else if(tickettypes[i].value == "half"){
+                            return contract.buyhalfticket(hash,{from:address,value:web3js.toWei(4,"finney")}, function (result) {
+                                console.log(result)
+                            });
+                        }
+                        else {
+                            return contract.buyquarterticket(hash,{from:address,value:web3js.toWei(2,"finney")}, function (result) {
+                                console.log(result)
+                            });
+                        }
+                    }
+                }
+            }
+
+            document.getElementById("purchaseform").reset();
+
+        }
+
+        function callrevealticket(address,no1,no2,no3){
+            if(address.trim().length == 0) {
+                alert("Give account address!");
+            }else{
+                return contract.revealticket(parseInt(no1),parseInt(no2),parseInt(no3),{from:address}, function (result) {
+                    console.log(result);
+                });
+            }
+
+            document.getElementById("revealform").reset();
+        }
+
+        function callgetprice(address){
+            if(address.trim().length == 0) {
+                alert("Give account address!");
+            }else{
+                return contract.getprice({from:address}, function (result) {
+                    console.log(result)
+                });
+            }
+
+            document.getElementById("priceform").reset();
+        }
+
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2 align="center" style="color: darkblue">Buy Ticket</h2>
+        <form id="purchaseform" class="row">
+            <div class="row">
+                <h4 class="col-sm-6">Account address:</h4>
+                <input id="fromAddress" class="col-sm-6">
+            </div>
+            <div class="row">
+                <h4 class="col-sm-6">Hash:</h4>
+                <input id="hash" class="col-sm-6">
+            </div>
+            <div class="row">
+                <h4 class="col-sm-6">Ticket type:</h4>
+                <div class="col-sm-6">
+                    <div class="row">
+                        <h4 class="col-sm-6">Full(8 finneys)</h4>
+                        <input class="col-sm-6" type="radio" name="tickettype" value="full">
+                    </div>
+                    <div class="row">
+                        <h4 class="col-sm-6">Half(4 finneys)</h4>
+                        <input class="col-sm-6" type="radio" name="tickettype" value="half">
+                    </div>
+                    <div class="row">
+                        <h4 class="col-sm-6">Quarter(2 finneys)</h4>
+                        <input class="col-sm-6" type="radio" name="tickettype" value="quarter">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <input class="col-md-2 col-md-offset-5" type="button" value="Buy" onclick="callbuyfullticket(document.getElementById('fromAddress').value,document.getElementById('hash').value)">
+            </div>
+        </form>
+
+        <hr>
+        <h2 align="center" style="color: darkblue">Reveal Ticket</h2>
+
+        <form id="revealform" class="row">
+            <div class="row">
+                <h4 class="col-sm-6">Account address:</h4>
+                <input id="frmAddress" class="col-sm-6">
+            </div>
+            <div class="row">
+                <h4 class="col-sm-6">Number1:</h4>
+                <input class="col-sm-6" type="number" id="no1" value="1">
+            </div>
+            <div class="row">
+                <h4 class="col-sm-6">Number2:</h4>
+                <input  class="col-sm-6" type="number" id="no2" value="1">
+            </div>
+            <div class="row">
+                <h4 class="col-sm-6">Number3:</h4>
+                <input class="col-sm-6" type="number" id="no3" value="1">
+            </div>
+            <div class="row">
+                <input class="col-md-2 col-md-offset-5" type="button" value="Reveal" onclick="callrevealticket(document.getElementById('frmAddress').value,document.getElementById('no1').value,document.getElementById('no2').value,document.getElementById('no3').value)">
+            </div>
+        </form>
+
+        <hr>
+        <h2 align="center" style="color: darkblue">Get Price</h2>
+
+        <form id="priceform" class="row">
+            <div class="row">
+                <h4 class="col-sm-6">Account address:</h4>
+                <input class="col-sm-6" id="frAddress">
+            </div>
+            <div class="row">
+                <input class="col-md-2 col-md-offset-5" type="button" value="Get Price" onclick="callgetprize(document.getElementById('frAddress').value)">
+            </div>
+        </form>
+
+    </div>
+</body>
+</html>

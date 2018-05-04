@@ -207,54 +207,70 @@ contract	Lottery	{
      uint blockNo = block.number;
      if(firstLotteryEnded(blockNo)){
 
-        winnernumber1 = winnernumber1 % totalrevealed;
-        winnernumber2 = winnernumber2 % totalrevealed;
-        winnernumber3 = winnernumber3 % totalrevealed;
-
-        //make sure that winner indexes are different
-        if(winnernumber1 == winnernumber2){
-           winnernumber2 = (winnernumber2 + 1) % totalrevealed;
-        }
-        if(winnernumber1 == winnernumber3){
-           winnernumber3 =  (winnernumber3 + 2) % totalrevealed;
-        }
-        if(winnernumber2 == winnernumber3){
-           winnernumber3 = (winnernumber3 + 1) % totalrevealed;
-        }
-
         uint prize1 = 0;
         uint prize2 = 0;
         uint prize3 = 0;
 
-        if(revealedtickets[winnernumber1].value == 8 finney){
-            prize1 = lotterybalance[lotteryno-1+firstpurchase]/2;
-        }else if(revealedtickets[winnernumber1].value == 4 finney){
-            prize1 = lotterybalance[lotteryno-1+firstpurchase]/4;
-        }else{
-            prize1 = lotterybalance[lotteryno-1+firstpurchase]/8;
+        if(totalrevealed >= 1){
+            winnernumber1 = winnernumber1 % totalrevealed;
+            
+            if(revealedtickets[winnernumber1].value == 8 finney){
+                prize1 = lotterybalance[lotteryno-1+firstpurchase]/2;
+            }else if(revealedtickets[winnernumber1].value == 4 finney){
+                prize1 = lotterybalance[lotteryno-1+firstpurchase]/4;
+            }else{
+                prize1 = lotterybalance[lotteryno-1+firstpurchase]/8;
+            }
+            
+            // give the price first winner if there are many winners with the same number
+            winners[revealedtickets[winnernumber1].owner] += prize1;
+        }
+        
+        if(totalrevealed >= 2){
+            winnernumber2 = winnernumber2 % totalrevealed;
+            
+            //make sure that winner indexes are different
+            if(winnernumber1 == winnernumber2){
+                winnernumber2 = (winnernumber2 + 1) % totalrevealed;
+            }
+            
+             if(revealedtickets[winnernumber2].value == 8 finney){
+                 prize2 = lotterybalance[lotteryno-1+firstpurchase]/4;
+             }else if(revealedtickets[winnernumber2].value == 4 finney){
+                 prize2 = lotterybalance[lotteryno-1+firstpurchase]/8;
+             }else{
+                 prize2 = lotterybalance[lotteryno-1+firstpurchase]/16;
+             }
+             
+             // give the price first winner if there are many winners with the same number
+             winners[revealedtickets[winnernumber2].owner] += prize2;
+    
+        }
+        
+        if(totalrevealed >= 3){
+            winnernumber3 = winnernumber3 % totalrevealed;  
+            
+            //make sure that winner indexes are different
+            if(winnernumber1 == winnernumber3){
+                winnernumber3 =  (winnernumber3 + 2) % totalrevealed;
+            }
+            if(winnernumber2 == winnernumber3){
+                winnernumber3 = (winnernumber3 + 1) % totalrevealed;
+            }
+            
+            if(revealedtickets[winnernumber3].value == 8 finney){
+                prize3 = lotterybalance[lotteryno-1+firstpurchase]/8;
+            }else if(revealedtickets[winnernumber3].value == 4 finney){
+                prize3 = lotterybalance[lotteryno-1+firstpurchase]/16;
+            }else{
+                prize3 = lotterybalance[lotteryno-1+firstpurchase]/32;
+            }
+            
+            // give the price first winner if there are many winners with the same number
+            winners[revealedtickets[winnernumber3].owner] += prize3;
         }
 
-        if(revealedtickets[winnernumber2].value == 8 finney){
-            prize2 = lotterybalance[lotteryno-1+firstpurchase]/4;
-        }else if(revealedtickets[winnernumber2].value == 4 finney){
-            prize2 = lotterybalance[lotteryno-1+firstpurchase]/8;
-        }else{
-            prize2 = lotterybalance[lotteryno-1+firstpurchase]/16;
-        }
-
-        if(revealedtickets[winnernumber3].value == 8 finney){
-            prize3 = lotterybalance[lotteryno-1+firstpurchase]/8;
-        }else if(revealedtickets[winnernumber3].value == 4 finney){
-            prize3 = lotterybalance[lotteryno-1+firstpurchase]/16;
-        }else{
-            prize3 = lotterybalance[lotteryno-1+firstpurchase]/32;
-        }
-
-
-        // give the price first winner if there are many winners with the same number
-        winners[revealedtickets[winnernumber1].owner] += prize1;
-        winners[revealedtickets[winnernumber2].owner] += prize2;
-        winners[revealedtickets[winnernumber3].owner] += prize3;
+       
 
         // update balance of the next lottery
         uint leftovermoney = lotterybalance[lotteryno-1+firstpurchase] - prize3 - prize2 - prize1;
