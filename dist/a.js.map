@@ -1,1 +1,0 @@
-{"version":3,"sources":["../a.js"],"names":["square","x"],"mappings":";;;;;QAAgBA,M,GAAAA,M;AAAT,SAASA,MAAT,CAAgBC,CAAhB,EAAmB;AACtB,WAAOA,IAAIA,CAAX;AACH","file":"a.js","sourcesContent":["export function square(x) {\n    return x * x;\n}\n"]}
